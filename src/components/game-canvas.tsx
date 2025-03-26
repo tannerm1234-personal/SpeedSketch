@@ -34,7 +34,7 @@ export default function GameCanvas({
     context.lineCap = "round";
     context.lineJoin = "round";
     context.strokeStyle = "#000";
-    context.lineWidth = 5;
+    context.lineWidth = 1.0; // Reduced line width further
 
     // Fill with white background
     context.fillStyle = "#fff";
@@ -111,20 +111,22 @@ export default function GameCanvas({
     if (!canvas) return null;
 
     const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
 
     if ("touches" in e) {
       // Touch event
       if (e.touches.length > 0) {
         return {
-          x: e.touches[0].clientX - rect.left,
-          y: e.touches[0].clientY - rect.top,
+          x: (e.touches[0].clientX - rect.left) * scaleX,
+          y: (e.touches[0].clientY - rect.top) * scaleY,
         };
       }
     } else {
       // Mouse event
       return {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top) * scaleY,
       };
     }
 
@@ -161,6 +163,7 @@ export default function GameCanvas({
           onTouchMove={draw}
           onTouchEnd={stopDrawing}
           className={`touch-none w-full h-full ${!isActive ? "cursor-not-allowed" : "cursor-crosshair"}`}
+          style={{ width: "100%", height: "100%" }}
         />
         {!isActive && (
           <div className="absolute inset-0 bg-gray-200 bg-opacity-50 flex items-center justify-center">

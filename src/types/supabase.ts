@@ -45,6 +45,7 @@ export type Database = {
           created_at: string | null
           difficulty: number | null
           id: string
+          last_used: string | null
           word: string
         }
         Insert: {
@@ -53,6 +54,7 @@ export type Database = {
           created_at?: string | null
           difficulty?: number | null
           id?: string
+          last_used?: string | null
           word: string
         }
         Update: {
@@ -61,6 +63,7 @@ export type Database = {
           created_at?: string | null
           difficulty?: number | null
           id?: string
+          last_used?: string | null
           word?: string
         }
         Relationships: []

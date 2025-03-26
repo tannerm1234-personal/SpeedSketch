@@ -4,24 +4,69 @@ import { NextResponse } from "next/server";
 // In a real implementation, this would call Google Cloud Vision API or similar
 function recognizeDrawing(
   imageData: string,
+  targetWord?: string,
 ): Promise<{ className: string; probability: number }[]> {
   // List of possible objects
-  const objects = ["cat", "dog", "tree", "car", "moon"];
+  const objects = [
+    "cat",
+    "dog",
+    "tree",
+    "car",
+    "moon",
+    "bicycle",
+    "house",
+    "sun",
+    "fish",
+    "bird",
+    "flower",
+    "book",
+    "chair",
+    "table",
+    "airplane",
+    "mountain",
+    "river",
+    "pizza",
+    "apple",
+    "banana",
+    "guitar",
+  ];
 
-  // For demo purposes, we'll return random results
-  // In a real implementation, this would analyze the image
+  // For demo purposes, we'll simulate more realistic recognition
   return new Promise((resolve) => {
     setTimeout(() => {
-      // Generate 3 random guesses with different probabilities
-      const results = objects
+      // If we have a target word, make it more likely to appear in results
+      let results = [];
+
+      // Always include the target word with a probability that increases over time
+      // This simulates the AI getting better at recognizing the drawing as it progresses
+      if (targetWord) {
+        // Random probability but weighted to sometimes be high
+        const targetProb =
+          Math.random() < 0.3
+            ? 0.7 + Math.random() * 0.3 // 30% chance of high probability
+            : 0.3 + Math.random() * 0.4; // 70% chance of medium-low probability
+
+        results.push({
+          className: targetWord,
+          probability: targetProb,
+        });
+      }
+
+      // Add some random guesses
+      const filteredObjects = objects.filter((obj) => obj !== targetWord);
+      const randomObjects = filteredObjects
         .sort(() => Math.random() - 0.5)
-        .slice(0, 3)
-        .map((obj) => ({
+        .slice(0, 2);
+
+      randomObjects.forEach((obj) => {
+        results.push({
           className: obj,
-          // Ensure we have a reasonable probability range (0.5-1.0) for better guessing
-          probability: 0.5 + Math.random() * 0.5,
-        }))
-        .sort((a, b) => b.probability - a.probability);
+          probability: 0.2 + Math.random() * 0.5,
+        });
+      });
+
+      // Sort by probability
+      results = results.sort((a, b) => b.probability - a.probability);
 
       resolve(results);
     }, 300); // Reduced API delay for faster feedback
@@ -30,7 +75,7 @@ function recognizeDrawing(
 
 export async function POST(request: Request) {
   try {
-    const { imageData } = await request.json();
+    const { imageData, targetWord } = await request.json();
 
     if (!imageData) {
       return NextResponse.json(
@@ -39,8 +84,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Call recognition function
-    const predictions = await recognizeDrawing(imageData);
+    // Call recognition function with target word if provided
+    const predictions = await recognizeDrawing(imageData, targetWord);
 
     return NextResponse.json({ predictions });
   } catch (error) {

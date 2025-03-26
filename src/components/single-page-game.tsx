@@ -83,7 +83,8 @@ export default function SinglePageGame() {
     fetchArtistCount();
   }, []);
 
-  // Check if user has played today - commented out for testing
+  // Check if user has played today
+  // Commented out for testing purposes
   /*useEffect(() => {
     const lastPlayed = localStorage.getItem("lastPlayedDate");
     const today = new Date().toDateString();
@@ -114,7 +115,8 @@ export default function SinglePageGame() {
 
   // Start game function
   const startGame = async () => {
-    // Check if already played today - commented out for testing
+    // Check if already played today
+    // Commented out for testing purposes
     /*const today = new Date().toDateString();
     const lastPlayed = localStorage.getItem("lastPlayedDate");
 
@@ -123,7 +125,7 @@ export default function SinglePageGame() {
       return;
     }*/
 
-    // Reset state
+    // Reset state and show loading state
     setGameState("countdown");
     setCountdownValue(3);
     setPredictions([]);
@@ -132,25 +134,31 @@ export default function SinglePageGame() {
     setTimeElapsed(0);
 
     // Fetch the daily prompt
-    const prompt = await fetchDailyPrompt();
-    setCurrentPrompt(prompt);
+    try {
+      const prompt = await fetchDailyPrompt();
+      setCurrentPrompt(prompt);
 
-    // Start countdown
-    if (countdownIntervalRef.current) {
-      clearInterval(countdownIntervalRef.current);
+      // Start countdown
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+      }
+
+      countdownIntervalRef.current = setInterval(() => {
+        setCountdownValue((prev) => {
+          if (prev <= 1) {
+            // Countdown complete, start the game
+            clearInterval(countdownIntervalRef.current!);
+            setGameState("playing");
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } catch (error) {
+      console.error("Error starting game:", error);
+      // Reset to idle state if there's an error
+      setGameState("idle");
     }
-
-    countdownIntervalRef.current = setInterval(() => {
-      setCountdownValue((prev) => {
-        if (prev <= 1) {
-          // Countdown complete, start the game
-          clearInterval(countdownIntervalRef.current!);
-          setGameState("playing");
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
   };
 
   // Start timer as soon as the prompt loads
@@ -200,7 +208,10 @@ export default function SinglePageGame() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ imageData: drawingDataUrl }),
+          body: JSON.stringify({
+            imageData: drawingDataUrl,
+            targetWord: currentPrompt, // Pass the target word to help with recognition
+          }),
         });
 
         if (!response.ok) throw new Error("Recognition failed");
@@ -256,7 +267,8 @@ export default function SinglePageGame() {
   const endGame = async (success: boolean, confidenceLevel = 0) => {
     setGameState("completed");
 
-    // Mark as played today - commented out for testing
+    // Mark as played today
+    // Commented out for testing purposes
     /*const today = new Date().toDateString();
     localStorage.setItem("lastPlayedDate", today);
     setHasPlayedToday(true);*/
@@ -393,12 +405,10 @@ export default function SinglePageGame() {
         <p className="text-gray-700 text-sm font-bold mb-2">
           Draw fast! Can you beat today's best time?
         </p>
+
         <p className="text-gray-600 text-xs mt-2 w-full mx-auto">
-          Draw the Daily Object QUICK! The A.I. will be guessing your artist
-          skills the entire time.
-          <br />
-          Get a fast time, rub it in your friends' faces how much better of an
-          artist you are! Can you beat today's best time?
+          Draw the Daily Object - FAST! The AI judges your skills in real time.
+          Then show off your drawing and time to show the world!
         </p>
 
         {/* Share button that appears after successful drawing */}
@@ -466,9 +476,8 @@ export default function SinglePageGame() {
             <>
               <Button
                 onClick={startGame}
-                // disabled={gameState === "countdown" || hasPlayedToday} // Daily limit commented out for testing
-                disabled={gameState === "countdown"}
-                className="px-6 py-2 bg-black hover:bg-gray-800 text-white rounded-lg text-sm font-medium shadow-sm transition-all"
+                disabled={gameState === "countdown" || hasPlayedToday}
+                className={`px-6 py-2 ${hasPlayedToday ? "bg-gray-400" : "bg-black hover:bg-gray-800"} text-white rounded-lg text-sm font-medium shadow-sm transition-all`}
               >
                 {gameState === "idle" ? "Start Drawing" : "Start Drawing"}
               </Button>
@@ -494,10 +503,50 @@ export default function SinglePageGame() {
             </>
           ) : (
             <div className="text-center py-2 px-4 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg shadow-sm text-white w-full max-w-xs">
-              <p className="text-xl font-bold">
-                {countdownValue > 0
-                  ? `Starting in ${countdownValue}...`
-                  : "GO!!!"}
+              <p className="text-xl font-bold flex items-center justify-center">
+                {currentPrompt ? (
+                  countdownValue > 0 ? (
+                    `Starting in ${countdownValue}...`
+                  ) : (
+                    "GO!!!"
+                  )
+                ) : (
+                  <>
+                    <svg
+                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    {
+                      [
+                        "Prepping for chaos",
+                        "Bracing for scribbles",
+                        "Gearing up fast",
+                        "Ready for mess",
+                        "Getting our glasses",
+                        "Prepping for wtf",
+                        "Strokes reveal all",
+                        'Readying for "art"',
+                        "Limp lines?",
+                      ][Math.floor(Math.random() * 9)]
+                    }
+                  </>
+                )}
               </p>
             </div>
           )}
